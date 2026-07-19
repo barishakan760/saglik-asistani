@@ -6,8 +6,7 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './manifest.json',
   './chart.js',
-  'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap',
-  'https://fonts.gstatic.com/s/outfit/v11/QId1mstEb5mUoDggb767A7s.woff2' // Cache basic font file for offline
+  'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap'
 ];
 
 // Install Service Worker and Cache Assets
