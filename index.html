@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Sağlık Asistanım</title>
+    <!-- PWA Settings -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d0f12">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js Local -->
+    <script src="chart.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    
+    <!-- Login / Register Overlay -->
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-logo">🩺</div>
+            <h1 class="auth-title">Sağlık Asistanım</h1>
+            <p class="auth-subtitle" id="authSubtitle">Sağlık verilerinizi güvenle saklamak için giriş yapın.</p>
+            
+            <!-- Register Form -->
+            <form id="registerForm" onsubmit="handleRegister(event)" style="display: none;">
+                <div class="form-group">
+                    <label for="regUsername">Adınız Soyadınız</label>
+                    <input type="text" id="regUsername" placeholder="Örn: Hakan Barış" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Şifre Belirleyin</label>
+                    <input type="password" id="regPassword" placeholder="En az 4 karakter" minlength="4" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPasswordConfirm">Şifreyi Onaylayın</label>
+                    <input type="password" id="regPasswordConfirm" placeholder="Şifrenizi tekrar girin" minlength="4" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block mt-10">Hesap Oluştur ve Başla</button>
+            </form>
+
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleLogin(event)" style="display: none;">
+                <div class="form-group">
+                    <label for="loginPassword">Şifreniz</label>
+                    <div style="position: relative;">
+                        <input type="password" id="loginPassword" placeholder="Şifrenizi girin" required>
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('loginPassword')">👁️</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block mt-10">Giriş Yap</button>
+                <button type="button" class="btn-text mt-15" onclick="forgotPassword()" style="font-size: 11px; display: block; margin: 15px auto 0 auto; color: var(--color-danger);">Şifremi Unuttum (Verileri Sıfırla)</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div class="app-container">
+        
+        <!-- Status Bar & Top Header -->
+        <header class="app-header">
+            <div class="header-top">
+                <div class="user-profile">
+                    <div class="avatar">🩺</div>
+                    <div class="user-info">
+                        <span class="greeting" id="greetingText">Merhaba,</span>
+                        <span class="username" id="displayUsername">Kullanıcı</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="themeToggle" class="icon-btn" aria-label="Koyu/Açık Tema Değiştir">
+                        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="header-date" id="currentDateText">19 Temmuz Pazar</div>
+        </header>
+
+        <!-- Main Content (Pages) -->
+        <main class="app-content">
+            
+            <!-- PAGE 1: DASHBOARD -->
+            <section id="page-dashboard" class="app-page active">
+                <div class="status-summary-card">
+                    <h3>Genel Sağlık Durumu</h3>
+                    <div class="status-indicator">
+                        <div class="status-badge normal" id="overallStatusBadge">Tüm Değerler Normal</div>
+                    </div>
+                    <p class="status-desc" id="overallStatusDesc">Son 7 günde kaydettiğiniz şeker ve tansiyon verileriniz normal sınırlar içerisinde seyretmektedir.</p>
+                </div>
+
+                <div class="quick-stats-grid">
+                    <div class="quick-stat-card sugar-card">
+                        <div class="card-header">
+                            <span class="title">Son Şeker</span>
+                            <span class="icon">🩸</span>
+                        </div>
+                        <div class="value-display">
+                            <span class="number" id="quickSugarVal">--</span>
+                            <span class="unit">mg/dL</span>
+                        </div>
+                        <div class="footer-info">
+                            <span class="tag" id="quickSugarTag">Kayıt yok</span>
+                            <span class="time" id="quickSugarTime"></span>
+                        </div>
+                    </div>
+
+                    <div class="quick-stat-card bp-card">
+                        <div class="card-header">
+                            <span class="title">Son Tansiyon</span>
+                            <span class="icon">💓</span>
+                        </div>
+                        <div class="value-display">
+                            <span class="number" id="quickBpVal">--</span>
+                            <span class="unit">mmHg</span>
+                        </div>
+                        <div class="footer-info">
+                            <span class="tag" id="quickBpTag">Kayıt yok</span>
+                            <span class="time" id="quickBpTime"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Water Tracker Component -->
+                <div class="water-tracker-card">
+                    <div class="water-header">
+                        <h4>Günlük Su Takibi</h4>
+                        <span class="water-count" id="waterCounter">0 / 2500 ml</span>
+                    </div>
+                    <div class="water-progress-bar">
+                        <div class="water-progress-fill" id="waterProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="water-buttons">
+                        <button class="btn btn-secondary btn-sm" onclick="addWater(250)">🥛 +250 ml</button>
+                        <button class="btn btn-secondary btn-sm" onclick="addWater(500)">🥤 +500 ml</button>
+                        <button class="btn btn-secondary btn-sm btn-icon" onclick="resetWater()" title="Sıfırla">🔄</button>
+                    </div>
+                </div>
+
+                <!-- Recent Activities -->
+                <div class="section-header">
+                    <h2>Son Kayıtlar</h2>
+                    <button class="btn-text" onclick="switchPage('history')">Tümünü Gör</button>
+                </div>
+                <div class="activity-list" id="recentActivityList">
+                    <!-- Activities dynamic load -->
+                    <div class="empty-state">Henüz hiç sağlık verisi kaydedilmemiş.</div>
+                </div>
+            </section>
+
+            <!-- PAGE 2: LOGGING (Veri Ekle) -->
+            <section id="page-log" class="app-page">
+                <h2>Sağlık Değeri Kaydet</h2>
+                <div class="tab-container">
+                    <div class="log-tabs">
+                        <button class="log-tab-btn active" onclick="switchLogTab('sugar')">🩸 Şeker</button>
+                        <button class="log-tab-btn" onclick="switchLogTab('pressure')">💓 Tansiyon</button>
+                        <button class="log-tab-btn" onclick="switchLogTab('weight')">⚖️ Kilo / Diğer</button>
+                    </div>
+
+                    <!-- Sugar Form -->
+                    <form id="sugarForm" class="log-form active" onsubmit="saveSugar(event)">
+                        <div class="form-group">
+                            <label>Ölçüm Tipi</label>
+                            <div class="radio-toggle-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="sugar_type" value="fasting" checked>
+                                    <span>Açlık Şekeri</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="sugar_type" value="postprandial">
+                                    <span>Tokluk Şekeri</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sugar_value">Şeker Değeri (mg/dL)</label>
+                            <input type="number" id="sugar_value" name="sugar_value" placeholder="Örn: 95" min="20" max="600" required>
+                            <span class="input-helper">Normal açlık değeri <100 mg/dL, tokluk değeri <140 mg/dL'dir.</span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col">
+                                <label for="sugar_date">Tarih</label>
+                                <input type="date" id="sugar_date" name="sugar_date" required>
+                            </div>
+                            <div class="form-group col">
+                                <label for="sugar_time">Saat</label>
+                                <input type="time" id="sugar_time" name="sugar_time" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sugar_notes">Notlar (Opsiyonel)</label>
+                            <textarea id="sugar_notes" name="sugar_notes" placeholder="Örn: Yemekten hemen önce, halsizlik hissi vb." rows="2"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block">🩸 Şeker Kaydet</button>
+                    </form>
+
+                    <!-- Blood Pressure Form -->
+                    <form id="pressureForm" class="log-form" onsubmit="savePressure(event)">
+                        <div class="form-row">
+                            <div class="form-group col">
+                                <label for="bp_systolic">Büyük Tansiyon (Sistolik)</label>
+                                <input type="number" id="bp_systolic" name="bp_systolic" placeholder="Örn: 120" min="50" max="280" required>
+                            </div>
+                            <div class="form-group col">
+                                <label for="bp_diastolic">Küçük Tansiyon (Diyastolik)</label>
+                                <input type="number" id="bp_diastolic" name="bp_diastolic" placeholder="Örn: 80" min="30" max="180" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bp_pulse">Nabız (Kalp Atış Hızı / dk)</label>
+                            <input type="number" id="bp_pulse" name="bp_pulse" placeholder="Örn: 72" min="30" max="220" required>
+                            <span class="input-helper">Normal tansiyon <120/80 mmHg, nabız 60-100/dk aralığıdır.</span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col">
+                                <label for="bp_date">Tarih</label>
+                                <input type="date" id="bp_date" name="bp_date" required>
+                            </div>
+                            <div class="form-group col">
+                                <label for="bp_time">Saat</label>
+                                <input type="time" id="bp_time" name="bp_time" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bp_notes">Notlar (Opsiyonel)</label>
+                            <textarea id="bp_notes" name="bp_notes" placeholder="Örn: Dinlenmiş halde, kahve içtikten sonra vb." rows="2"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block">💓 Tansiyon Kaydet</button>
+                    </form>
+
+                    <!-- Weight/Other Form -->
+                    <form id="weightForm" class="log-form" onsubmit="saveWeight(event)">
+                        <div class="form-group">
+                            <label for="weight_value">Kilo (kg)</label>
+                            <input type="number" id="weight_value" name="weight_value" placeholder="Örn: 75.5" step="0.1" min="10" max="300" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col">
+                                <label for="weight_date">Tarih</label>
+                                <input type="date" id="weight_date" name="weight_date" required>
+                            </div>
+                            <div class="form-group col">
+                                <label for="weight_time">Saat</label>
+                                <input type="time" id="weight_time" name="weight_time" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="weight_notes">Notlar (Opsiyonel)</label>
+                            <textarea id="weight_notes" name="weight_notes" placeholder="Örn: Sabah aç karnına, spor sonrası vb." rows="2"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block">⚖️ Değeri Kaydet</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- PAGE 3: CHARTS & ANALYSIS (Grafikler) -->
+            <section id="page-analysis" class="app-page">
+                <div class="analysis-header">
+                    <h2>Analiz & Grafikler</h2>
+                    <div class="period-toggle">
+                        <button class="period-btn active" onclick="switchPeriod('daily')">G</button>
+                        <button class="period-btn" onclick="switchPeriod('weekly')">H</button>
+                        <button class="period-btn" onclick="switchPeriod('monthly')">A</button>
+                    </div>
+                </div>
+
+                <!-- Stats summary cards -->
+                <div class="stats-overview" id="statsOverviewContainer">
+                    <div class="stat-avg-item">
+                        <div class="label">Şeker (Açlık Ort.)</div>
+                        <div class="value" id="avgFastingSugar">--</div>
+                    </div>
+                    <div class="stat-avg-item">
+                        <div class="label">Şeker (Tokluk Ort.)</div>
+                        <div class="value" id="avgPostprandialSugar">--</div>
+                    </div>
+                    <div class="stat-avg-item">
+                        <div class="label">Tansiyon (Ortalama)</div>
+                        <div class="value" id="avgBp">--</div>
+                    </div>
+                </div>
+
+                <!-- Chart Canvas Containers -->
+                <div class="chart-container">
+                    <h3>Şeker Seyri (mg/dL)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="sugarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>Tansiyon & Nabız Seyri</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="bpChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 4: ADVICE CENTER (Asistan & Yorum) -->
+            <section id="page-advice" class="app-page">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin-bottom: 0;">Sağlık Asistanı <span id="geminiActiveBadge" class="gemini-badge" style="display: none;">Gemini AI</span></h2>
+                    <button id="refreshAdviceBtn" class="btn btn-secondary btn-sm" onclick="generateAdviceReport(true)" style="padding: 6px 12px; font-size: 11px;">🔄 Yenile</button>
+                </div>
+                
+                <div class="assistant-intro">
+                    <div class="ai-avatar">🤖</div>
+                    <div class="intro-speech">
+                        <p><strong>Merhaba!</strong> Ben sizin kişisel sağlık asistanınızım. <span id="assistantMethodText">Değerlerinizi yerel kurallara göre yorumlayıp tavsiye üretiyorum.</span></p>
+                    </div>
+                </div>
+
+                <!-- API Key Reminder (Visible only if Gemini key is missing) -->
+                <div id="geminiPromoBanner" class="gemini-note" style="display: none;">
+                    <p>💡 <strong>Yapay Zeka Gücü:</strong> Gemini'nin sizin için özel tıbbi analizler, beslenme ve yaşam tarzı önerileri yapmasını ister misiniz? Profil sayfasından ücretsiz bir API anahtarı ekleyin!</p>
+                </div>
+
+                <div class="advice-categories" id="adviceContainer">
+                    <!-- Advice cards will be loaded here dynamically -->
+                    <div class="advice-card notice-card">
+                        <h4>Değerlendirme Başlıyor</h4>
+                        <p>Yorum yapabilmem için lütfen kayıt ekle sayfasından en az bir şeker veya tansiyon ölçümü ekleyin.</p>
+                    </div>
+                </div>
+
+                <div class="medical-disclaimer">
+                    <p>⚠️ <strong>Önemli Uyarı:</strong> Bu uygulamadaki tavsiyeler genel bilgilendirme amaçlıdır. Asla bir doktor teşhisi veya tedavisi yerine geçmez. Kendinizi kötü hissettiğinizde lütfen acilen bir sağlık kuruluşuna başvurun.</p>
+                </div>
+            </section>
+
+            <!-- PAGE 5: HISTORY & SETTINGS (Tarihçe & Ayarlar) -->
+            <section id="page-settings" class="app-page">
+                <h2>Profil & Ayarlar</h2>
+
+                <!-- User Name Settings -->
+                <div class="settings-card">
+                    <h3>Profil Bilgileri</h3>
+                    <div class="form-group">
+                        <label for="usernameInput">Adınız</label>
+                        <input type="text" id="usernameInput" value="Kullanıcı" placeholder="Adınızı yazın...">
+                        <div class="btn-group">
+                            <button class="btn btn-secondary btn-sm" onclick="saveProfileName()">Adı Güncelle</button>
+                            <button class="btn btn-danger btn-sm" onclick="handleLogout()" style="background: linear-gradient(135deg, #ef4444, #b91c1c); color: white;">🔒 Oturumu Kapat</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gemini API Settings -->
+                <div class="settings-card">
+                    <h3>Gemini Yapay Zeka Ayarları</h3>
+                    <p class="settings-desc">Kişiselleştirilmiş derin yapay zeka analizleri ve tavsiyeleri almak için ücretsiz Gemini API anahtarınızı ekleyin.</p>
+                    <div class="form-group">
+                        <label for="geminiKeyInput">Gemini API Anahtarı</label>
+                        <input type="password" id="geminiKeyInput" placeholder="AIzaSy... anahtarınızı buraya girin">
+                        <span class="input-helper">Anahtarınız tarayıcınızın yerel belleğinde saklanır. <a href="https://aistudio.google.com/" target="_blank" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">Buraya tıklayarak Google AI Studio'dan ücretsiz alabilirsiniz.</a></span>
+                        <div class="btn-group">
+                            <button class="btn btn-primary btn-sm gemini-btn-sparkle" onclick="saveGeminiKey()">Anahtarı Kaydet</button>
+                            <button class="btn btn-secondary btn-sm" onclick="removeGeminiKey()">Anahtarı Sil</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Import / Export -->
+                <div class="settings-card">
+                    <h3>Veri Yönetimi</h3>
+                    <p class="settings-desc">Verilerinizi güvenceye almak için cihazınıza indirebilir veya daha sonra tekrar yükleyebilirsiniz.</p>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="exportData()">📤 Verileri Dışa Aktar</button>
+                        <button class="btn btn-secondary" onclick="triggerImport()">📥 Verileri İçe Aktar</button>
+                        <input type="file" id="importFileInput" style="display: none;" onchange="importData(event)" accept=".json">
+                    </div>
+                    <button class="btn btn-danger btn-block mt-15" onclick="clearAllData()">⚠️ Tüm Verileri Sıfırla</button>
+                </div>
+
+                <!-- Info Card -->
+                <div class="settings-card app-info-card">
+                    <h3>Uygulama Bilgileri</h3>
+                    <div class="info-row">
+                        <span>Versiyon:</span>
+                        <strong>1.0.0 (PWA)</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Veri Saklama:</span>
+                        <strong>Cihazınızda yerel (Güvenli)</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>APK Çevirici Rehberi:</span>
+                        <a href="#" onclick="switchPage('apk-guide'); return false;">APK Nasıl Yapılır?</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HIDDEN PAGE: APK GUIDE -->
+            <section id="page-apk-guide" class="app-page">
+                <div class="back-header">
+                    <button class="back-btn" onclick="switchPage('settings')">← Geri</button>
+                    <h2>APK Oluşturma Rehberi</h2>
+                </div>
+                
+                <div class="guide-content">
+                    <p>Bu uygulamayı telefonunuza bağımsız bir <strong>APK</strong> olarak kurmak için şu adımları izleyebilirsiniz:</p>
+                    
+                    <div class="step-card">
+                        <div class="step-num">1</div>
+                        <div class="step-desc">
+                            <h4>Dosyaları Zip Formatında İndirin</h4>
+                            <p>Projenin bulunduğu klasördeki tüm dosyaları (index.html, style.css, app.js, manifest.json, sw.js ve ikonları) bir <strong>ZIP</strong> arşivi haline getirin.</p>
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-num">2</div>
+                        <div class="step-desc">
+                            <h4>WebIntoApp Sitesini Açın</h4>
+                            <p>Tarayıcınızdan <a href="https://www.webintoapp.com" target="_blank">webintoapp.com</a> adresine gidin.</p>
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-num">3</div>
+                        <div class="step-desc">
+                            <h4>Dosyaları Yükleyin ve Ayarlayın</h4>
+                            <p>"Get Started" butonuna tıklayın. Uygulama tipi olarak **"HTML Files (Local Archive)"** seçin ve oluşturduğunuz ZIP dosyasını yükleyin. Uygulama ismi olarak "Sağlık Asistanım" yazın.</p>
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-num">4</div>
+                        <div class="step-desc">
+                            <h4>APK Dosyasını İndirin</h4>
+                            <p>Web sitesi uygulamanızı birkaç saniye içinde Android projesine dönüştürüp APK olarak indirebilmeniz için link verecektir. İndirdiğiniz APK'yı telefonunuza yükleyip kurabilirsiniz.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HIDDEN PAGE: ALL HISTORY -->
+            <section id="page-history" class="app-page">
+                <div class="back-header">
+                    <button class="back-btn" onclick="switchPage('dashboard')">← Geri</button>
+                    <h2>Kayıt Geçmişi</h2>
+                </div>
+                
+                <div class="history-filters">
+                    <button class="history-filter-btn active" onclick="filterHistory('all')">Tümü</button>
+                    <button class="history-filter-btn" onclick="filterHistory('sugar')">Şeker</button>
+                    <button class="history-filter-btn" onclick="filterHistory('pressure')">Tansiyon</button>
+                    <button class="history-filter-btn" onclick="filterHistory('weight')">Kilo</button>
+                </div>
+
+                <div class="history-list" id="fullHistoryList">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="app-navbar">
+            <button class="nav-item active" id="nav-dashboard" onclick="switchPage('dashboard')">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Ana Sayfa</span>
+            </button>
+            <button class="nav-item" id="nav-log" onclick="switchPage('log')">
+                <span class="nav-icon">➕</span>
+                <span class="nav-label">Kayıt Ekle</span>
+            </button>
+            <button class="nav-item" id="nav-analysis" onclick="switchPage('analysis')">
+                <span class="nav-icon">📈</span>
+                <span class="nav-label">Analiz</span>
+            </button>
+            <button class="nav-item" id="nav-advice" onclick="switchPage('advice')">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-label">Asistan</span>
+            </button>
+            <button class="nav-item" id="nav-settings" onclick="switchPage('settings')">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Profil</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toastNotification" class="toast">
+        <span id="toastMessage">Kayıt başarıyla eklendi.</span>
+    </div>
+
+    <!-- App Logic Script -->
+    <script src="app.js"></script>
+    <script>
+        // Register PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered', reg))
+                    .catch(err => console.error('Service Worker registration failed', err));
+            });
+        }
+    </script>
+</body>
+</html>
